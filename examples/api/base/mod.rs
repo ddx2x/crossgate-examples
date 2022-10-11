@@ -68,6 +68,6 @@ impl Base {
         cond.wheres("version>=1").unwrap();
 
         log::info!("{:?}", cond);
-        self.loc.watch(ctx, cond).await
+        self.loc.watch(ctx, cond).await.unwrap()
     }
 }

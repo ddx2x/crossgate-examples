@@ -92,6 +92,23 @@ impl Base {
         self.mongo_store.list_any_type::<GpsInfo>(cond).await
     }
 
+    pub async fn create_gpsinfo(&self, g: GpsInfo) -> anyhow::Result<()> {
+        let mut cond = new_mongo_condition();
+        cond.with_db("base").with_table("gps_info");
+
+        self.mongo_store.save_any_type(g, cond).await?;
+        Ok(())
+    }
+
+    pub async fn delete_gpsinfo(&self, vname: &str) -> anyhow::Result<()> {
+        let mut cond = new_mongo_condition();
+        cond.with_db("base")
+            .with_table("gps_info")
+            .wheres(&format!("vname = '{}'", vname))?;
+
+        self.mongo_store.delete_any_type::<GpsInfo>(cond).await?;
+        Ok(())
+    }
     pub async fn watch(&self, ctx: Context) -> Receiver<Event<Local>> {
         let mut cond = new_mongo_condition();
         cond.wheres("version>=1").unwrap();

@@ -1,9 +1,9 @@
 use async_stream::stream;
 use axum::{
-    extract::TypedHeader,
+    extract::{self, Path, TypedHeader},
     response::sse::{Event, KeepAlive, Sse},
     response::{IntoResponse, Response},
-    routing::{get, get_service},
+    routing::{delete, get, get_service, post},
     Extension, Router,
 };
 use tokio_context::context::Context;
@@ -14,7 +14,7 @@ use std::{convert::Infallible, net::SocketAddr, time::Duration};
 use crossgate::store::Event as OpEvent;
 
 use crate::{
-    base::{Base, Local},
+    base::{Base, GpsInfo, Local},
     db_wrapper::get_mongo_store,
 };
 
@@ -35,6 +35,27 @@ async fn list_gpsinfo(Extension(base): Extension<Base>) -> impl IntoResponse {
     }
     axum::Json(vec![])
 }
+
+async fn cretae_gpsinfo(
+    extract::Json(gpsinfo): extract::Json<GpsInfo>,
+    Extension(base): Extension<Base>,
+) -> impl IntoResponse {
+    match base.create_gpsinfo(gpsinfo).await {
+        Ok(_) => "ok",
+        Err(e) => "failed",
+    }
+}
+
+async fn delete_gpsinfo(
+    Path(id): Path<String>,
+    Extension(base): Extension<Base>,
+) -> impl IntoResponse {
+    match base.delete_gpsinfo(&id).await {
+        Ok(_) => "ok",
+        Err(e) => "failed",
+    }
+}
+
 async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
     axum::Json(base.get("other").await)
 }
@@ -71,11 +92,15 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
         .await;
 
         let app = Router::new()
-            .route("/base/watch", get(watch))
+            // gpsinf crud
+            .route("/base/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
+            .route("/base/gps_info/:id", delete(delete_gpsinfo))
+            // local base op
             .route("/base/locals", get(list_local))
             .route("/base/local", get(get_local))
-            .route("/base/gps_info", get(list_gpsinfo))
             .route("/base", get(hello))
+            // watch steam
+            .route("/base/watch", get(watch))
             .layer(Extension(base));
 
         axum::Server::bind(&addr)

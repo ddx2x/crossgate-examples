@@ -25,6 +25,16 @@ async fn hello() -> &'static str {
 async fn list_local(Extension(base): Extension<Base>) -> impl IntoResponse {
     axum::Json(base.list().await)
 }
+
+async fn list_gpsinfo(Extension(base): Extension<Base>) -> impl IntoResponse {
+    match base.list_gpsinfo().await {
+        Ok(r) => return axum::Json(r),
+        Err(e) => {
+            log::error!("list info error: {}", e)
+        }
+    }
+    axum::Json(vec![])
+}
 async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
     axum::Json(base.get("other").await)
 }
@@ -64,6 +74,7 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
             .route("/base/watch", get(watch))
             .route("/base/locals", get(list_local))
             .route("/base/local", get(get_local))
+            .route("/base/gps_info", get(list_gpsinfo))
             .route("/base", get(hello))
             .layer(Extension(base));
 

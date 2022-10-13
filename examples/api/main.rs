@@ -25,6 +25,5 @@ async fn main() {
 }
 
 pub fn get_address() -> anyhow::Result<SocketAddr> {
-    use std::net::TcpListener;
-    Ok(TcpListener::bind("0.0.0.0:0")?.local_addr()?)
+    Ok(std::net::TcpListener::bind("0.0.0.0:0")?.local_addr()?)
 }

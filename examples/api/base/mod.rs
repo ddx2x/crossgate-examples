@@ -83,9 +83,10 @@ impl Base {
 
     pub async fn list_gpsinfo(&self) -> anyhow::Result<Vec<GpsInfo>> {
         let mut cond = new_mongo_condition();
-        
+
         cond.with_db("base")
             .with_table("gps_info")
+            .with_fields(&["vname", "points"])
             .wheres(&format!("vname='{}'", "云F***88"))?;
 
         self.mongo_store.list_any_type::<GpsInfo>(cond).await

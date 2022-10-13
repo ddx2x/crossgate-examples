@@ -1,5 +1,11 @@
 # crossgate-example
 
+# 先下载crossgate
+
+git clone https://github.com/ddx2x/crossgate.git
+
+git clone 本项目
+
 ## build
 
 ```

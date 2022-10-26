@@ -1,11 +1,12 @@
 use async_stream::stream;
 use axum::{
-    extract::{self, Path, TypedHeader},
-    response::sse::{Event, KeepAlive, Sse},
+    extract::{self, Path},
+    response::sse::{Event, Sse},
     response::{IntoResponse, Response},
-    routing::{delete, get, get_service, post},
+    routing::{delete, get},
     Extension, Router,
 };
+use hyper::{Body, StatusCode};
 use tokio_context::context::Context;
 
 use futures::{future::BoxFuture, stream::Stream};
@@ -14,35 +15,80 @@ use std::{convert::Infallible, net::SocketAddr, time::Duration};
 use crossgate::store::Event as OpEvent;
 
 use crate::{
-    base::{Base, GpsInfo, Local},
+    base::{Base, GpsInfo},
     db_wrapper::get_mongo_store,
 };
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct Pagination {
+    page: usize,
+    per_page: usize,
+    sort: String,
+}
+
+#[derive(serde::Serialize)]
+pub(crate) struct Empty {}
+
+#[derive(serde::Serialize)]
+pub(crate) struct Message<T>(T);
+
+pub(crate) fn respone_ok<T>(msg: T) -> Response<Body>
+where
+    T: serde::Serialize,
+{
+    let body = match serde_json::to_vec(&msg) {
+        Ok(b) => Body::from(b),
+        Err(e) => {
+            return Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Body::from(format!("{}", e)))
+                .unwrap()
+        }
+    };
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(body)
+        .unwrap()
+}
+
+pub(crate) fn respone_failed<T>(status_code: StatusCode, msg: T) -> Response<Body>
+where
+    T: serde::Serialize,
+{
+    let body = match serde_json::to_vec(&msg) {
+        Ok(b) => Body::from(b),
+        Err(e) => Body::from(format!("marshal error: {}", e)),
+    };
+
+    Response::builder().status(status_code).body(body).unwrap()
+}
 
 async fn hello() -> &'static str {
     "base"
 }
 
-async fn list_local(Extension(base): Extension<Base>) -> impl IntoResponse {
-    axum::Json(base.list().await)
+async fn list_local(Extension(base): Extension<Base>) -> Response<Body> {
+    match base.list().await {
+        Ok(locals) => respone_ok(Message(locals)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
 }
 
-async fn list_gpsinfo(Extension(base): Extension<Base>) -> impl IntoResponse {
+async fn list_gpsinfo(Extension(base): Extension<Base>) -> Response<Body> {
     match base.list_gpsinfo().await {
-        Ok(r) => return axum::Json(r),
-        Err(e) => {
-            log::error!("list info error: {}", e)
-        }
+        Ok(gps_infos) => respone_ok(Message(gps_infos)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
     }
-    axum::Json(vec![])
 }
 
 async fn cretae_gpsinfo(
     extract::Json(gpsinfo): extract::Json<GpsInfo>,
     Extension(base): Extension<Base>,
-) -> impl IntoResponse {
+) -> Response<Body> {
     match base.create_gpsinfo(gpsinfo).await {
-        Ok(_) => "ok",
-        Err(e) => "failed",
+        Ok(_) => respone_ok(""),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
     }
 }
 
@@ -51,13 +97,16 @@ async fn delete_gpsinfo(
     Extension(base): Extension<Base>,
 ) -> impl IntoResponse {
     match base.delete_gpsinfo(&id).await {
-        Ok(_) => "ok",
-        Err(e) => "failed",
+        Ok(_) => respone_ok(""),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
     }
 }
 
 async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
-    axum::Json(base.get("other").await)
+    match base.get_local("other").await {
+        Ok(local) => respone_ok(Message(local)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
 }
 
 async fn watch(
@@ -65,13 +114,14 @@ async fn watch(
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let stream = stream! {
         let (ctx, h) = Context::new();
-        let mut r = base.watch(ctx).await;
-        while let Some(item) = r.recv().await {
-            if let OpEvent::Error(e) = item {
-                log::error!("error {:?}",e);
-                break;
+        if let Ok(mut r) = base.watch(ctx).await{
+              while let Some(item) = r.recv().await {
+                if let OpEvent::Error(e) = item {
+                    log::error!("error {:?}",e);
+                    break;
+                }
+                yield Ok(Event::default().data(format!("{}", item)));
             }
-            yield Ok(Event::default().data(format!("{}", item)));
         }
         h.cancel();
     };
@@ -108,6 +158,5 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
             .await
             .unwrap();
     };
-
     Box::pin(block)
 }

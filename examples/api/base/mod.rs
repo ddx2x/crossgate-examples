@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
 use bson::doc;
-use crossgate::store::{new_mongo_condition, Condition, Event, MongoDbModel, MongoFilter};
+use crossgate::store::{new_mongo_condition, Event, MongoDbModel, MongoFilter};
 pub use gps::Gps;
 pub use local::Local;
 
@@ -19,8 +19,7 @@ use crossgate::store::MongoStorageExtends;
 pub struct Base {
     addr: SocketAddr,
 
-    loc: CrossgateService<Local, MongoFilter, MongoStore>,
-    gps: CrossgateService<Gps, MongoFilter, MongoStore>,
+    local: CrossgateService<Local, MongoFilter, MongoStore>,
 
     mongo_store: MongoStore,
 }
@@ -47,14 +46,9 @@ impl MongoDbModel for GpsInfo {}
 impl Base {
     pub fn create(addr: &SocketAddr, store: &MongoStore) -> Self {
         let base = Self {
-            loc: CrossgateService::<Local, MongoFilter, MongoStore>::new(
+            local: CrossgateService::<Local, MongoFilter, MongoStore>::new(
                 "base".to_string(),
                 "local".to_string(),
-                store.clone(),
-            ),
-            gps: CrossgateService::<gps::Gps, MongoFilter, MongoStore>::new(
-                "base".to_string(),
-                "gps_latest".to_string(),
                 store.clone(),
             ),
             addr: addr.clone(),
@@ -63,22 +57,14 @@ impl Base {
         base
     }
 
-    pub async fn list(&self) -> Vec<Local> {
-        let mut cond = Condition::new(MongoFilter(doc! {}));
-        // if let Err(e) = cond.wheres("status=1") {
-        //     return vec![];
-        // };
-        if let Ok(rs) = self.loc.list(cond).await {
-            return rs;
-        }
-        vec![]
+    pub async fn list(&self) -> anyhow::Result<Vec<Local>> {
+        self.local.list(new_mongo_condition()).await
     }
 
-    pub async fn get(&self, name: &str) -> Local {
+    pub async fn get_local(&self, name: &str) -> anyhow::Result<Local> {
         let mut cond = new_mongo_condition();
-
-        cond.wheres(&format!("name='{}'", name)).unwrap();
-        self.loc.get(cond).await.unwrap()
+        cond.wheres(&format!("name='{}'", name))?;
+        self.local.get(cond).await
     }
 
     pub async fn list_gpsinfo(&self) -> anyhow::Result<Vec<GpsInfo>> {
@@ -89,6 +75,7 @@ impl Base {
             .with_fields(&["vname", "points"])
             .wheres(&format!("vname='{}'", "云F***88"))?;
 
+        // select vname,points from base.gps_info where vname="云F***88"
         self.mongo_store.list_any_type::<GpsInfo>(cond).await
     }
 
@@ -109,11 +96,18 @@ impl Base {
         self.mongo_store.delete_any_type::<GpsInfo>(cond).await?;
         Ok(())
     }
-    pub async fn watch(&self, ctx: Context) -> Receiver<Event<Local>> {
-        let mut cond = new_mongo_condition();
-        cond.wheres("version>=1").unwrap();
 
-        log::info!("{:?}", cond);
-        self.loc.watch(ctx, cond).await.unwrap()
+    pub async fn update_local(&self, local: Local) -> anyhow::Result<()> {
+        let mut cond = new_mongo_condition();
+        cond.wheres(&format!("name='{}'", local.name))?;
+        self.local.update(local, cond).await?;
+        Ok(())
+    }
+
+    pub async fn watch(&self, ctx: Context) -> anyhow::Result<Receiver<Event<Local>>> {
+        let mut cond = new_mongo_condition();
+        cond.wheres("version>=1")?;
+
+        self.local.watch(ctx, cond).await
     }
 }

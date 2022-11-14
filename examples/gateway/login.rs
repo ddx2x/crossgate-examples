@@ -1,6 +1,4 @@
-use std::pin::Pin;
-
-use futures::{future::BoxFuture, Future};
+use futures::future::BoxFuture;
 use hyper::{Body, Request, Response};
 
 mod User {

@@ -4,23 +4,19 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
 use bson::doc;
-use crossgate::store::{new_mongo_condition, Event, MongoDbModel, MongoFilter};
 pub use gps::Gps;
 pub use local::Local;
 
-use crossgate::service::Service as CrossgateService;
-use crossgate::store::MongoStore;
+use crossgate::service::MongoStoreService;
+use crossgate::store::{new_mongo_condition, Event, MongoDbModel, MongoStorageExtends, MongoStore};
+
 use tokio::sync::mpsc::Receiver;
 use tokio_context::context::Context;
-
-use crossgate::store::MongoStorageExtends;
 
 #[derive(Debug, Clone)]
 pub struct Base {
     addr: SocketAddr,
-
-    local: CrossgateService<Local, MongoFilter, MongoStore>,
-
+    local: MongoStoreService<Local>,
     mongo_store: MongoStore,
 }
 
@@ -46,11 +42,7 @@ impl MongoDbModel for GpsInfo {}
 impl Base {
     pub fn create(addr: &SocketAddr, store: &MongoStore) -> Self {
         let base = Self {
-            local: CrossgateService::<Local, MongoFilter, MongoStore>::new(
-                "base".to_string(),
-                "local".to_string(),
-                store.clone(),
-            ),
+            local: MongoStoreService::<Local>::new("base", "local", store.clone()),
             addr: addr.clone(),
             mongo_store: store.clone(),
         };
@@ -58,13 +50,13 @@ impl Base {
     }
 
     pub async fn list(&self) -> anyhow::Result<Vec<Local>> {
-        self.local.list(new_mongo_condition()).await
+        self.local.0.list(new_mongo_condition()).await
     }
 
     pub async fn get_local(&self, name: &str) -> anyhow::Result<Local> {
         let mut cond = new_mongo_condition();
         cond.wheres(&format!("name='{}'", name))?;
-        self.local.get(cond).await
+        self.local.0.get(cond).await
     }
 
     pub async fn list_gpsinfo(&self) -> anyhow::Result<Vec<GpsInfo>> {
@@ -115,7 +107,7 @@ impl Base {
     pub async fn update_local(&self, local: Local) -> anyhow::Result<()> {
         let mut cond = new_mongo_condition();
         cond.wheres(&format!("name='{}'", local.name))?;
-        self.local.update(local, cond).await?;
+        self.local.0.update(local, cond).await?;
         Ok(())
     }
 
@@ -123,6 +115,6 @@ impl Base {
         let mut cond = new_mongo_condition();
         cond.wheres("version>=1")?;
 
-        self.local.watch(ctx, cond).await
+        self.local.0.watch(ctx, cond).await
     }
 }

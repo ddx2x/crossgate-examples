@@ -76,15 +76,28 @@ impl Base {
             .wheres(&format!("vname='{}'", "云F***88"))?;
 
         // select vname,points from base.gps_info where vname="云F***88"
-        self.mongo_store.list_any_type::<GpsInfo>(cond).await
+        self.mongo_store
+            .clone()
+            .list_any_type::<GpsInfo>(cond)
+            .await
+    }
+
+    pub async fn get_gpsinfo(&self, id: &str) -> anyhow::Result<GpsInfo> {
+        let mut cond = new_mongo_condition();
+
+        cond.with_db("base")
+            .with_table("gps_info")
+            .wheres(&format!("_id='{}'", id))?;
+
+        // select * from base.gps_info where _id = ?;
+        self.mongo_store.clone().get_any_type::<GpsInfo>(cond).await
     }
 
     pub async fn create_gpsinfo(&self, g: GpsInfo) -> anyhow::Result<()> {
         let mut cond = new_mongo_condition();
         cond.with_db("base").with_table("gps_info");
 
-        self.mongo_store.save_any_type(g, cond).await?;
-        Ok(())
+        self.mongo_store.clone().save_any_type(g, cond).await
     }
 
     pub async fn delete_gpsinfo(&self, vname: &str) -> anyhow::Result<()> {
@@ -93,8 +106,10 @@ impl Base {
             .with_table("gps_info")
             .wheres(&format!("vname = '{}'", vname))?;
 
-        self.mongo_store.delete_any_type::<GpsInfo>(cond).await?;
-        Ok(())
+        self.mongo_store
+            .clone()
+            .delete_any_type::<GpsInfo>(cond)
+            .await
     }
 
     pub async fn update_local(&self, local: Local) -> anyhow::Result<()> {

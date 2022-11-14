@@ -81,6 +81,12 @@ async fn list_gpsinfo(Extension(base): Extension<Base>) -> Response<Body> {
         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
     }
 }
+async fn get_gpsinfo(Path(id): Path<String>, Extension(base): Extension<Base>) -> Response<Body> {
+    match base.get_gpsinfo(&id).await {
+        Ok(gps_infos) => respone_ok(Message(gps_infos)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
+}
 
 async fn cretae_gpsinfo(
     extract::Json(gpsinfo): extract::Json<GpsInfo>,
@@ -144,7 +150,10 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
         let app = Router::new()
             // gpsinf crud
             .route("/base/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
-            .route("/base/gps_info/:id", delete(delete_gpsinfo))
+            .route(
+                "/base/gps_info/:id",
+                delete(delete_gpsinfo).get(get_gpsinfo),
+            )
             // local base op
             .route("/base/locals", get(list_local))
             .route("/base/local", get(get_local))

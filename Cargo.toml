@@ -41,13 +41,13 @@ async-stream = "0.3"
 
 
 # crossgate = { git = "https://github.com/ddx2x/crossgate.git", branch = "main" }
-crossgate-rs = { git = "https://github.com/ddx2x/crossgate-rs.git", branch = "main" }
+# crossgate-rs = { git = "https://github.com/ddx2x/crossgate-rs.git", branch = "main" }
 
 [dependencies.crossgate]
 path = "../crossgate"
 
-# [dependencies.crossgate-rs]
-# path = "../crossgate-rs"
+[dependencies.crossgate-rs]
+path = "../crossgate-rs"
 
 [[bin]]
 name = "api"

@@ -222,12 +222,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async_once"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ce4f10ea3abcd6617873bae9f91d1c5332b4a778bd9ce34d0cd517474c1de82"
-
-[[package]]
 name = "atomic-waker"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -558,10 +552,6 @@ dependencies = [
  "anyhow",
  "bson",
  "condition",
- "crossbeam",
- "crossgate-rs",
- "dotenv",
- "env_logger",
  "futures",
  "helper",
  "log",
@@ -608,7 +598,6 @@ dependencies = [
 [[package]]
 name = "crossgate-rs"
 version = "0.1.0"
-source = "git+https://github.com/ddx2x/crossgate-rs.git?branch=main#ad8afdedb542b702059f9fd7df4c4615afd26c39"
 dependencies = [
  "micro",
  "net",
@@ -1519,7 +1508,6 @@ dependencies = [
 [[package]]
 name = "micro"
 version = "0.1.0"
-source = "git+https://github.com/ddx2x/crossgate-rs.git?branch=main#ad8afdedb542b702059f9fd7df4c4615afd26c39"
 dependencies = [
  "anyhow",
  "crossbeam",
@@ -1625,7 +1613,6 @@ dependencies = [
 [[package]]
 name = "net"
 version = "0.1.0"
-source = "git+https://github.com/ddx2x/crossgate-rs.git?branch=main#ad8afdedb542b702059f9fd7df4c4615afd26c39"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1806,10 +1793,8 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 [[package]]
 name = "plugin"
 version = "0.1.0"
-source = "git+https://github.com/ddx2x/crossgate-rs.git?branch=main#ad8afdedb542b702059f9fd7df4c4615afd26c39"
 dependencies = [
  "async-trait",
- "async_once",
  "crossbeam",
  "dotenv",
  "futures",

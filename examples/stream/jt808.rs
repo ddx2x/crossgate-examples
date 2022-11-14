@@ -1,4 +1,5 @@
 use bytes::Buf;
+use crossgate_rs::net::{Connection, ConnectionError};
 use std::io::Read;
 
 #[derive(Clone, Debug)]
@@ -40,30 +41,23 @@ impl crossgate_rs::net::Frame for JT808Frame {
 pub struct JT808Handle {}
 
 impl crossgate_rs::net::Handle for JT808Handle {
-    type HandleFuture<'a> = impl std::future::Future<Output = Result<(), crossgate_rs::net::ConnectionError>> + 'a
+    type HandleFuture<'a> = impl futures::Future<Output = Result<(), ConnectionError>> + 'a
     where
         Self: 'a;
 
-    fn handle<'r>(
-        &mut self,
-        conn: &'r mut crossgate_rs::net::Connection,
-    ) -> Self::HandleFuture<'r> {
-        async move {
-            loop {
-                if let Ok(f) = conn.read_frame::<JT808Frame>(&JT808Frame::None).await {
-                    match f {
-                        Some(JT808Frame::P0200(data)) => {
-                            println!("{:?}", data);
-                        }
-                        _ => {
-                            break;
-                        }
+    fn handle<'r>(self, conn: &'r mut Connection) -> Self::HandleFuture<'r> {
+        let block = async move {
+            while let Some(frame) = conn.read_frame::<JT808Frame>(&JT808Frame::None).await? {
+                match frame {
+                    JT808Frame::P0200(data) => {
+                        println!("{:?}", data);
                     }
-                } else {
-                    break;
+                    _ => {}
                 }
             }
             Ok(())
-        }
+        };
+
+        block
     }
 }

@@ -1,6 +1,6 @@
 // use async_trait::async_trait;
 use bytes::Buf;
-use crossgate_rs::net::Connection;
+use crossgate_rs::net::{Connection, ConnectionError};
 use std::io::{BufRead, Write};
 
 #[derive(Debug, Clone)]
@@ -55,27 +55,17 @@ impl crossgate_rs::net::Frame for EchoFrame {
 pub struct EchoFrameHandle {}
 
 impl crossgate_rs::net::Handle for EchoFrameHandle {
-    type HandleFuture<'a> = impl std::future::Future<Output = Result<(), crossgate_rs::net::ConnectionError>> 
+    type HandleFuture<'a> = impl std::future::Future<Output = Result<(), ConnectionError>> + 'a
     where
         Self: 'a;
 
-    fn handle<'r>(&mut self, conn: &'r mut Connection) -> Self::HandleFuture<'r> {
+    fn handle<'r>(self, conn: &'r mut Connection) -> Self::HandleFuture<'r> {
         let block = async move {
-            loop {
-                let request = EchoFrame::Request("".to_string());
-                match conn.read_frame(&request).await {
-                    Ok(frame) => {
-                        if let Some(f) = frame {
-                            if let Err(e) = conn.write_frame(f).await {
-                                log::error!("write frame error {:?}", e)
-                            }
-                        }
-                    }
-                    Err(e) => return Err(e),
-                }
+            while let Some(frame) = conn.read_frame(&EchoFrame::Request("".to_string())).await? {
+                let _ = conn.write_frame(frame).await?;
             }
+            Ok(())
         };
-
         block
     }
 }

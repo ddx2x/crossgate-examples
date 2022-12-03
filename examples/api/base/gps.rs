@@ -11,6 +11,8 @@ struct Gps {
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct GpsCount {
+    #[serde(rename(serialize = "uid"))]
+    _id: String,
     count: i64,
 }
 impl MongoDbModel for GpsCount {}

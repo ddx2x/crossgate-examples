@@ -124,6 +124,7 @@ impl Base {
     }
 
     pub async fn gps_count(&self) -> anyhow::Result<Vec<GpsCount>> {
+        // select count(1) from base.gps_info where vname="云F***88" group by vname order by count desc;
         self.mongo_store
             .clone()
             .aggregate::<GpsCount>(
@@ -133,6 +134,8 @@ impl Base {
                     doc! {"$match":{"vname":"云F***88"}},
                     doc! {"$group": { "_id": "$vname", "count": { "$sum": 1 } }},
                     doc! {"$sort": {"count":-1}},
+                    doc! {"$limit": 10},
+                    doc! {"$skip": 0},
                 ],
             )
             .await

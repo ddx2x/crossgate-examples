@@ -8,10 +8,15 @@ pub use gps::Gps;
 pub use local::Local;
 
 use crossgate::service::MongoStoreService;
-use crossgate::store::{new_mongo_condition, Event, MongoDbModel, MongoStorageExtends, MongoStore};
+use crossgate::store::{
+    new_mongo_condition, Event, MongoDbModel, MongoStorageAggregationExtends, MongoStorageExtends,
+    MongoStore,
+};
 
 use tokio::sync::mpsc::Receiver;
 use tokio_context::context::Context;
+
+use self::gps::GpsCount;
 
 #[derive(Debug, Clone)]
 pub struct Base {
@@ -116,5 +121,20 @@ impl Base {
         cond.wheres("version>=1")?;
 
         self.local.0.watch(ctx, cond).await
+    }
+
+    pub async fn gps_count(&self) -> anyhow::Result<Vec<GpsCount>> {
+        self.mongo_store
+            .clone()
+            .aggregate::<GpsCount>(
+                "base".to_string(),
+                "gps_info".to_string(),
+                vec![
+                    doc! {"$match":{"vname":"云F***88"}},
+                    doc! {"$group": { "_id": "$vname", "count": { "$sum": 1 } }},
+                    doc! {"$sort": {"count":-1}},
+                ],
+            )
+            .await
     }
 }

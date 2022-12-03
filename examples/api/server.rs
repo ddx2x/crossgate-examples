@@ -108,6 +108,13 @@ async fn delete_gpsinfo(
     }
 }
 
+async fn gps_count(Extension(base): Extension<Base>) -> impl IntoResponse {
+    match base.gps_count().await {
+        Ok(r) => respone_ok(r),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
+}
+
 async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
     match base.get_local("other").await {
         Ok(local) => respone_ok(Message(local)),
@@ -149,7 +156,11 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
 
         let app = Router::new()
             // gpsinf crud
-            .route("/base/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
+            .route(
+                "/base/gps_info",
+                get(list_gpsinfo), // .post(cretae_gpsinfo)
+            )
+            .route("/base/gps_info_count", get(gps_count))
             .route(
                 "/base/gps_info/:id",
                 delete(delete_gpsinfo).get(get_gpsinfo),

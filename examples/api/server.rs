@@ -44,10 +44,11 @@ where
                 .body(Body::from(format!("{}", e)))
                 .unwrap()
         }
-    };
+};
 
     Response::builder()
         .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
         .body(body)
         .unwrap()
 }

@@ -112,7 +112,7 @@ impl Base {
     pub async fn update_local(&self, local: Local) -> anyhow::Result<()> {
         let mut cond = new_mongo_condition();
         cond.wheres(&format!("name='{}'", local.name))?;
-        self.local.0.update(local, cond).await?;
+        self.local.0.apply(local, cond).await?;
         Ok(())
     }
 

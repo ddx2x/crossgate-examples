@@ -1,5 +1,6 @@
 pub mod gps;
 pub mod local;
+use crossgate::utils::Unstructed;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
@@ -121,6 +122,17 @@ impl Base {
         cond.wheres("version>=1")?;
 
         self.local.0.watch(ctx, cond).await
+    }
+
+    pub async fn watch2(&self, ctx: Context) -> anyhow::Result<Receiver<Event<Unstructed>>> {
+        let q = new_mongo_condition()
+            .to_owned()
+            .with_db("abc321_trade")
+            .with_table("order")
+            .wheres("state=1")?
+            .to_owned();
+
+        self.mongo_store.clone().watch_any_type(ctx, q).await
     }
 
     pub async fn gps_count(&self) -> anyhow::Result<Vec<GpsCount>> {

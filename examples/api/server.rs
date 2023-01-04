@@ -44,7 +44,7 @@ where
                 .body(Body::from(format!("{}", e)))
                 .unwrap()
         }
-};
+    };
 
     Response::builder()
         .status(StatusCode::OK)
@@ -147,6 +147,30 @@ async fn watch(
     )
 }
 
+async fn watch2(
+    Extension(base): Extension<Base>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let stream = stream! {
+        let (ctx, h) = Context::new();
+        if let Ok(mut r) = base.watch2(ctx).await{
+              while let Some(item) = r.recv().await {
+                if let OpEvent::Error(e) = item {
+                    log::error!("error {:?}",e);
+                    break;
+                }
+                yield Ok(Event::default().data(format!("{}", item)));
+            }
+        }
+        h.cancel();
+    };
+
+    Sse::new(stream).keep_alive(
+        axum::response::sse::KeepAlive::new()
+            .interval(Duration::from_secs(10))
+            .text("keep-alive"),
+    )
+}
+
 pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
     let block = async move {
         let base = crossgate_rs::micro::make_service(crate::base::Base::create(
@@ -172,6 +196,7 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
             .route("/base", get(hello))
             // watch steam
             .route("/base/watch", get(watch))
+            .route("/watch2", get(watch2))
             .layer(Extension(base));
 
         axum::Server::bind(&addr)

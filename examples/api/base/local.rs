@@ -4,4 +4,6 @@ use crossgate::object::{decorate, Object};
 struct Local {
     #[serde(default)]
     pub name: String,
+
+    pub district: String,
 }

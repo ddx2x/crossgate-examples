@@ -3,7 +3,7 @@ use axum::{
     extract::{self, Path},
     response::sse::{Event, Sse},
     response::{IntoResponse, Response},
-    routing::{delete, get},
+    routing::{delete, get, post},
     Extension, Router,
 };
 use hyper::{Body, StatusCode};
@@ -75,6 +75,12 @@ async fn list_local(Extension(base): Extension<Base>) -> Response<Body> {
         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
     }
 }
+async fn list_local_name(Extension(base): Extension<Base>) -> Response<Body> {
+    match base.list_local_unstructed().await {
+        Ok(locals) => respone_ok(Message(locals)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
+}
 
 async fn list_gpsinfo(Extension(base): Extension<Base>) -> Response<Body> {
     match base.list_gpsinfo().await {
@@ -90,8 +96,8 @@ async fn get_gpsinfo(Path(id): Path<String>, Extension(base): Extension<Base>) -
 }
 
 async fn cretae_gpsinfo(
-    extract::Json(gpsinfo): extract::Json<GpsInfo>,
     Extension(base): Extension<Base>,
+    extract::Json(gpsinfo): extract::Json<GpsInfo>,
 ) -> Response<Body> {
     match base.create_gpsinfo(gpsinfo).await {
         Ok(_) => respone_ok(""),
@@ -181,10 +187,7 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
 
         let app = Router::new()
             // gpsinf crud
-            .route(
-                "/base/gps_info",
-                get(list_gpsinfo), // .post(cretae_gpsinfo)
-            )
+            .route("/base/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
             .route("/base/gps_info_count", get(gps_count))
             .route(
                 "/base/gps_info/:id",
@@ -194,6 +197,7 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
             .route("/base/locals", get(list_local))
             .route("/base/local", get(get_local))
             .route("/base", get(hello))
+            .route("/base/local_unstruncted", get(list_local_name))
             // watch steam
             .route("/base/watch", get(watch))
             .route("/watch2", get(watch2))

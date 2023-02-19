@@ -56,13 +56,38 @@ impl Base {
     }
 
     pub async fn list(&self) -> anyhow::Result<Vec<Local>> {
-        self.local.0.list(new_mongo_condition()).await
+        self.local
+            .0
+            .list(
+                new_mongo_condition()
+                    .to_owned()
+                    .wheres("name ='other'")?
+                    .to_owned(),
+            )
+            .await
     }
 
-    pub async fn get_local(&self, name: &str) -> anyhow::Result<Local> {
+    pub async fn list_local_unstructed(&self) -> anyhow::Result<Option<Vec<Unstructed>>> {
+        let q = new_mongo_condition()
+            .to_owned()
+            .with_db("base")
+            .with_table("local")
+            .with_fields(&["name"])
+            .to_owned();
+        let res = self
+            .mongo_store
+            .clone()
+            .list_any_type::<Unstructed>(q)
+            .await?;
+
+        Ok(Some(res))
+    }
+
+    pub async fn get_local(&self, name: &str) -> anyhow::Result<Option<Local>> {
         let mut cond = new_mongo_condition();
         cond.wheres(&format!("name='{}'", name))?;
-        self.local.0.get(cond).await
+
+        Ok(self.local.0.get(cond).await?)
     }
 
     pub async fn list_gpsinfo(&self) -> anyhow::Result<Vec<GpsInfo>> {
@@ -74,10 +99,12 @@ impl Base {
             .wheres(&format!("vname='{}'", "云F***88"))?;
 
         // select vname,points from base.gps_info where vname="云F***88"
-        self.mongo_store
+        let r = self
+            .mongo_store
             .clone()
             .list_any_type::<GpsInfo>(cond)
-            .await
+            .await?;
+        Ok(r)
     }
 
     pub async fn get_gpsinfo(&self, id: &str) -> anyhow::Result<GpsInfo> {
@@ -88,14 +115,21 @@ impl Base {
             .wheres(&format!("_id='{}'", id))?;
 
         // select * from base.gps_info where _id = ?;
-        self.mongo_store.clone().get_any_type::<GpsInfo>(cond).await
+        let r = self
+            .mongo_store
+            .clone()
+            .get_any_type::<GpsInfo>(cond)
+            .await?;
+        Ok(r)
     }
 
     pub async fn create_gpsinfo(&self, g: GpsInfo) -> anyhow::Result<()> {
         let mut cond = new_mongo_condition();
         cond.with_db("base").with_table("gps_info");
 
-        self.mongo_store.clone().save_any_type(g, cond).await
+        let _ = self.mongo_store.clone().save_any_type(g, cond).await?;
+
+        Ok(())
     }
 
     pub async fn delete_gpsinfo(&self, vname: &str) -> anyhow::Result<()> {
@@ -107,7 +141,8 @@ impl Base {
         self.mongo_store
             .clone()
             .delete_any_type::<GpsInfo>(cond)
-            .await
+            .await?;
+        Ok(())
     }
 
     pub async fn update_local(&self, local: Local) -> anyhow::Result<()> {
@@ -132,12 +167,15 @@ impl Base {
             .wheres("state=1")?
             .to_owned();
 
-        self.mongo_store.clone().watch_any_type(ctx, q).await
+        let r = self.mongo_store.clone().watch_any_type(ctx, q).await?;
+
+        Ok(r)
     }
 
     pub async fn gps_count(&self) -> anyhow::Result<Vec<GpsCount>> {
         // select count(1) from base.gps_info where vname="云F***88" group by vname order by count desc;
-        self.mongo_store
+        let r = self
+            .mongo_store
             .clone()
             .aggregate::<GpsCount>(
                 "base".to_string(),
@@ -150,6 +188,8 @@ impl Base {
                     doc! {"$skip": 0},
                 ],
             )
-            .await
+            .await?;
+
+        Ok(r)
     }
 }

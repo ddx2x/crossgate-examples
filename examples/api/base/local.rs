@@ -1,4 +1,4 @@
-use crossgate::object::{decorate, Object};
+use crossgate::{object::{decorate, Object}, store::MongoDbModel};
 
 #[decorate]
 struct Local {
@@ -7,3 +7,5 @@ struct Local {
 
     pub district: String,
 }
+
+impl MongoDbModel for Local {}

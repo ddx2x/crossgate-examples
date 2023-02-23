@@ -9,9 +9,10 @@ pub use gps::Gps;
 pub use local::Local;
 
 use crossgate::service::MongoStoreService;
+
 use crossgate::store::{
     new_mongo_condition, Event, MongoDbModel, MongoStorageAggregationExtends, MongoStorageExtends,
-    MongoStore,
+    MongoStorageOpExtends, MongoStore,
 };
 
 use tokio::sync::mpsc::Receiver;
@@ -88,6 +89,31 @@ impl Base {
         cond.wheres(&format!("name='{}'", name))?;
 
         Ok(self.local.0.get(cond).await?)
+    }
+
+    pub async fn incr_count(&self) -> anyhow::Result<Option<Local>> {
+        let q = new_mongo_condition()
+            .to_owned()
+            .with_db("base")
+            .with_table("local")
+            .to_owned();
+
+        Ok(self
+            .mongo_store
+            .clone()
+            .incr::<Local>(&[("count", 1)], q)
+            .await?)
+    }
+
+    pub async fn batch_remove_local(&self) -> anyhow::Result<u64> {
+        let q = new_mongo_condition()
+            .to_owned()
+            .with_db("base")
+            .with_table("local")
+            .wheres("_id ~ ('abc122','abc129')")?
+            .to_owned();
+
+        Ok(self.mongo_store.clone().batch_remove(q).await?)
     }
 
     pub async fn list_gpsinfo(&self) -> anyhow::Result<Vec<GpsInfo>> {

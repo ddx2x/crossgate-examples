@@ -129,6 +129,20 @@ async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
     }
 }
 
+async fn incr_local_count(Extension(base): Extension<Base>) -> impl IntoResponse {
+    match base.incr_count().await {
+        Ok(local) => respone_ok(Message(local)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
+}
+async fn batch_remove_local(Extension(base): Extension<Base>) -> impl IntoResponse {
+    match base.batch_remove_local().await {
+        Ok(local) => respone_ok(Message(local)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
+}
+
+
 async fn watch(
     Extension(base): Extension<Base>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
@@ -196,6 +210,9 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
             // local base op
             .route("/base/locals", get(list_local))
             .route("/base/local", get(get_local))
+            .route("/base/local/op/incr", get(incr_local_count))
+            .route("/base/local/op/batch_remove", get(batch_remove_local))
+            
             .route("/base", get(hello))
             .route("/base/local_unstruncted", get(list_local_name))
             // watch steam

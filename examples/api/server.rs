@@ -142,6 +142,12 @@ async fn batch_remove_local(Extension(base): Extension<Base>) -> impl IntoRespon
     }
 }
 
+async fn partial_update_local(Extension(base): Extension<Base>) -> impl IntoResponse {
+    match base.partial_update_local().await {
+        Ok(local) => respone_ok(Message(local)),
+        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+    }
+}
 
 async fn watch(
     Extension(base): Extension<Base>,
@@ -201,23 +207,26 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
 
         let app = Router::new()
             // gpsinf crud
-            .route("/base/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
-            .route("/base/gps_info_count", get(gps_count))
+            .route("/base/api/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
+            .route("/base/api/gps_info_count", get(gps_count))
             .route(
-                "/base/gps_info/:id",
+                "/base/api/gps_info/:id",
                 delete(delete_gpsinfo).get(get_gpsinfo),
             )
             // local base op
-            .route("/base/locals", get(list_local))
-            .route("/base/local", get(get_local))
-            .route("/base/local/op/incr", get(incr_local_count))
-            .route("/base/local/op/batch_remove", get(batch_remove_local))
-            
-            .route("/base", get(hello))
-            .route("/base/local_unstruncted", get(list_local_name))
+            .route("/base/api/locals", get(list_local))
+            .route("/base/api/local", get(get_local))
+            .route("/base/api/local/op/incr", get(incr_local_count))
+            .route("/base/api/local/op/batch_remove", get(batch_remove_local))
+            .route(
+                "/base/api/local/op/partial_update",
+                get(partial_update_local),
+            )
+            .route("/base/api/", get(hello))
+            .route("/base/api/local_unstruncted", get(list_local_name))
             // watch steam
-            .route("/base/watch", get(watch))
-            .route("/watch2", get(watch2))
+            .route("/base/api/watch", get(watch))
+            .route("/base/api/watch2", get(watch2))
             .layer(Extension(base));
 
         axum::Server::bind(&addr)

@@ -1,7 +1,8 @@
 pub mod gps;
 pub mod local;
-use crossgate::utils::Unstructed;
+use crossgate::utils::{from_str, Unstructed};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::net::SocketAddr;
 
 use bson::doc;
@@ -29,7 +30,7 @@ pub struct Base {
 
 impl crossgate_rs::micro::Service for Base {
     fn name(&self) -> String {
-        "base".to_owned()
+        "/base/api".to_owned()
     }
     fn addr(&self) -> SocketAddr {
         self.addr
@@ -103,6 +104,23 @@ impl Base {
             .clone()
             .incr::<Local>(&[("count", 1)], q)
             .await?)
+    }
+
+    pub async fn partial_update_local(&self) -> anyhow::Result<Option<Unstructed>> {
+        let q = new_mongo_condition()
+            .to_owned()
+            .with_db("base")
+            .with_table("local")
+            .with_fields(&["a"])
+            .wheres("_id = 'abc124'")?
+            .to_owned();
+
+        Ok(Some(
+            self.mongo_store
+                .clone()
+                .apply_any_type::<Unstructed>(from_str(r#"{"a":{"b":2}}"#)?, q)
+                .await?,
+        ))
     }
 
     pub async fn batch_remove_local(&self) -> anyhow::Result<u64> {

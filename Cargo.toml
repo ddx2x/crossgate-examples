@@ -65,6 +65,9 @@ path = "examples/stream/main.rs"
 name = "object"
 path = "examples/obejct/main.rs"
 
+[[bin]]
+name = "backend"
+path = "examples/backend/main.rs"
 
 [profile.release]
 opt-level = 'z'

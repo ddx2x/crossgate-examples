@@ -1,4 +1,7 @@
-use crossgate::{object::{decorate, Object}, store::MongoDbModel};
+use crossgate::{
+    object::{decorate, Object},
+    store::MongoDbModel,
+};
 
 #[decorate]
 struct Local {

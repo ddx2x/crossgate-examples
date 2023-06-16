@@ -27,7 +27,10 @@ impl Executor for Task {
 
                         log::info!("start task lock");
 
-                        log::info!("count {:#?}",register.get_backend_service("test").await);
+                        if let Ok((id,ids))=register.get_backend_service("test").await{
+
+                            log::info!("id is {} ,ids is {:?}",id,ids);
+                        }
 
                        //sleep 1 secs
                         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;

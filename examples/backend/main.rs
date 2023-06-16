@@ -25,15 +25,12 @@ impl Executor for Task {
                 _ = async move {
                     loop {
 
-                        log::info!("start task lock");
-
                         if let Ok((id,ids))=register.get_backend_service("test").await{
-
                             log::info!("id is {} ,ids is {:?}",id,ids);
                         }
 
                        //sleep 1 secs
-                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     }
 
 

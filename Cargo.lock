@@ -506,6 +506,7 @@ dependencies = [
 [[package]]
 name = "condition"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate.git?branch=20230614#bab738ff66cb1f7b52f61b98cb28500f96b8d6be"
 dependencies = [
  "anyhow",
  "cfgrammar",
@@ -600,6 +601,7 @@ dependencies = [
 [[package]]
 name = "crossgate"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate.git?branch=20230614#bab738ff66cb1f7b52f61b98cb28500f96b8d6be"
 dependencies = [
  "anyhow",
  "async-recursion",
@@ -656,6 +658,7 @@ dependencies = [
 [[package]]
 name = "crossgate-rs"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate-rs.git?branch=20230616-1#287c6dcee21a911f9ed9103a7e155561df8c172d"
 dependencies = [
  "micro",
  "net",
@@ -1162,6 +1165,7 @@ checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
 [[package]]
 name = "helper"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate.git?branch=20230614#bab738ff66cb1f7b52f61b98cb28500f96b8d6be"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1637,6 +1641,7 @@ dependencies = [
 [[package]]
 name = "micro"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate-rs.git?branch=20230616-1#287c6dcee21a911f9ed9103a7e155561df8c172d"
 dependencies = [
  "anyhow",
  "crossbeam",
@@ -1758,6 +1763,7 @@ dependencies = [
 [[package]]
 name = "net"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate-rs.git?branch=20230616-1#287c6dcee21a911f9ed9103a7e155561df8c172d"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1938,6 +1944,7 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 [[package]]
 name = "plugin"
 version = "0.1.0"
+source = "git+https://gitee.com/ddx2x-p/crossgate-rs.git?branch=20230616-1#287c6dcee21a911f9ed9103a7e155561df8c172d"
 dependencies = [
  "anyhow",
  "async-trait",

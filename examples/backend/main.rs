@@ -1,23 +1,33 @@
+use crossgate::store::MongoStore;
 use crossgate_rs::{
     micro::{Executor, Register},
     plugin::Plugin,
 };
+use db_wrapper::get_mongo_store;
 
-use std::sync::Arc;
+mod db_wrapper;
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+    sync::Arc,
+};
 use tokio::{self, sync::Mutex};
 
-struct Task {}
+#[derive(Clone, Copy)]
+struct Task<'a> {
+    store: &'a MongoStore,
+}
 
-impl Executor for Task {
+impl<'a> Executor for Task<'a> {
     fn group(&self) -> String {
         "test".to_string()
     }
 
-    fn start<'a>(
+    fn start<'b>(
         &self,
         ctx: tokio_context::context::Context,
-        register: &'a Register,
-    ) -> futures::future::BoxFuture<'a, anyhow::Result<()>> {
+        register: &'b Register,
+    ) -> futures::future::BoxFuture<'b, anyhow::Result<()>> {
         let mut ctx = ctx;
         Box::pin(async move {
             log::info!("start task");
@@ -32,7 +42,6 @@ impl Executor for Task {
                        //sleep 1 secs
                         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     }
-
 
                 } =>{},
 
@@ -49,6 +58,13 @@ async fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    crossgate_rs::micro::backend_service_run(Task {}, crossgate_rs::plugin::PluginType::Mongodb)
-        .await
+    let store = get_mongo_store().await;
+
+    let task = Task { store };
+
+    tokio::select! {
+        _= crossgate_rs::micro::backend_service_run(task, crossgate_rs::plugin::PluginType::Mongodb)=>{},
+        // _= crossgate_rs::micro::backend_service_run(task, crossgate_rs::plugin::PluginType::Mongodb)=>{},
+
+    }
 }

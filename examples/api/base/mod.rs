@@ -82,7 +82,7 @@ impl Base {
             .list_any_type::<Unstructed>(q)
             .await?;
 
-        Ok(Some(res))
+        Ok(res)
     }
 
     pub async fn get_local(&self, name: &str) -> anyhow::Result<Option<Local>> {
@@ -115,12 +115,11 @@ impl Base {
             .wheres("_id = 'abc124'")?
             .to_owned();
 
-        Ok(Some(
-            self.mongo_store
-                .clone()
-                .apply_any_type::<Unstructed>(from_str(r#"{"a":{"b":2}}"#)?, q)
-                .await?,
-        ))
+        Ok(self
+            .mongo_store
+            .clone()
+            .apply_any_type::<Unstructed>(from_str(r#"{"a":{"b":2}}"#)?, q)
+            .await?)
     }
 
     pub async fn batch_remove_local(&self) -> anyhow::Result<u64> {
@@ -134,7 +133,7 @@ impl Base {
         Ok(self.mongo_store.clone().batch_remove(q).await?)
     }
 
-    pub async fn list_gpsinfo(&self) -> anyhow::Result<Vec<GpsInfo>> {
+    pub async fn list_gpsinfo(&self) -> anyhow::Result<Option<Vec<GpsInfo>>> {
         let mut cond = new_mongo_condition();
 
         cond.with_db("base")
@@ -151,7 +150,7 @@ impl Base {
         Ok(r)
     }
 
-    pub async fn get_gpsinfo(&self, id: &str) -> anyhow::Result<GpsInfo> {
+    pub async fn get_gpsinfo(&self, id: &str) -> anyhow::Result<Option<GpsInfo>> {
         let mut cond = new_mongo_condition();
 
         cond.with_db("base")
@@ -216,7 +215,7 @@ impl Base {
         Ok(r)
     }
 
-    pub async fn gps_count(&self) -> anyhow::Result<Vec<GpsCount>> {
+    pub async fn gps_count(&self) -> anyhow::Result<Option<Vec<GpsCount>>> {
         // select count(1) from base.gps_info where vname="云F***88" group by vname order by count desc;
         let r = self
             .mongo_store

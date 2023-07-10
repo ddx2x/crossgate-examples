@@ -2,15 +2,15 @@ use futures::future::BoxFuture;
 use hyper::{Body, Request, Response};
 
 mod User {
-    use crossgate::object::{decorate, Object};
-    #[decorate]
+    use crossgate::object::{metadata, Object};
+    #[metadata(uid)]
     struct User {}
 }
 
 mod Role {
-    use crossgate::object::{decorate, Object};
+    use crossgate::object::{metadata, Object};
 
-    #[decorate]
+    #[metadata(uid)]
     struct Role {}
 }
 

@@ -39,16 +39,17 @@ headers = "0.3"
 hyper-trust-dns = "0.5.0"
 async-stream = "0.3"
 
+rand="0.8.4"
 
-crossgate-rs = { git = "https://gitee.com/ddx2x-p/crossgate-rs.git", branch = "20230616-1" }
-crossgate = { git = "https://gitee.com/ddx2x-p/crossgate.git", branch = "20230614" }
+# crossgate-rs = { git = "https://gitee.com/ddx2x-p/crossgate-rs.git", branch = "20230616-1" }
+# crossgate = { git = "https://gitee.com/ddx2x-p/crossgate.git", branch = "20230614" }
 
 
-# [dependencies.crossgate]
-# path = "../crossgate"
+[dependencies.crossgate]
+path = "../crossgate"
 
-# [dependencies.crossgate-rs]
-# path = "../crossgate-rs"
+[dependencies.crossgate-rs]
+path = "../crossgate-rs"
 
 [[bin]]
 name = "api"

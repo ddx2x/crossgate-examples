@@ -1,5 +1,5 @@
 use crossgate::{
-    object::{decorate, Object},
+    object::{metadata, Object},
     service::MongoStoreService,
     store::new_mongo_condition,
 };
@@ -31,7 +31,7 @@ pub async fn get_mongo_store() -> &'static MongoStore {
     unsafe { MONGO_STORE.get_unchecked() }
 }
 
-#[decorate]
+#[metadata(uid)]
 struct A {
     name: String,
     sex: Option<u8>,

@@ -1,9 +1,9 @@
 use crossgate::{
-    object::{decorate, Object},
+    object::{metadata, Object},
     store::MongoDbModel,
 };
 
-#[decorate]
+#[metadata(uid)]
 struct Gps {
     #[serde(default)]
     gps: Vec<Vec<f64>>,

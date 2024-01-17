@@ -3,7 +3,6 @@ use crossgate::{
     service::MongoStoreService,
     store::new_mongo_condition,
 };
-use std::env;
 
 use crossgate::store::MongoStore;
 

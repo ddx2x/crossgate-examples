@@ -2,11 +2,11 @@ pub mod gps;
 pub mod local;
 use crossgate::utils::{from_str, Unstructed};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 use std::net::SocketAddr;
 
 use bson::doc;
-pub use gps::Gps;
+
 pub use local::Local;
 
 use crossgate::service::MongoStoreService;

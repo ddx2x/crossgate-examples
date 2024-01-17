@@ -6,13 +6,8 @@ use crossgate_rs::{
 use db_wrapper::get_mongo_store;
 
 mod db_wrapper;
-use std::{
-    cell::{Cell, RefCell},
-    hash::{Hash, Hasher},
-    rc::Rc,
-    sync::Arc,
-};
-use tokio::{self, sync::Mutex};
+use std::hash::{Hash, Hasher};
+use tokio::{self};
 
 fn random_id() -> String {
     use rand::Rng;
@@ -86,7 +81,7 @@ async fn main() {
     let mut task = Task { store };
 
     tokio::select! {
-        _= crossgate_rs::micro::backend_service_run(&mut task, crossgate_rs::plugin::PluginType::Mongodb)=>{},
+        _= crossgate_rs::micro::backend_service_run(&mut task)=>{},
         // _= crossgate_rs::micro::backend_service_run(task, crossgate_rs::plugin::PluginType::Mongodb)=>{},
 
     }

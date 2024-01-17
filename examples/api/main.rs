@@ -16,12 +16,7 @@ async fn main() {
 
     let addr = listen_addr.parse::<SocketAddr>().unwrap();
 
-    crossgate_rs::micro::web_service_run(
-        &addr,
-        server::run,
-        crossgate_rs::plugin::PluginType::Mongodb,
-    )
-    .await
+    crossgate_rs::micro::web_service_run(&addr, server::run).await
 }
 
 pub fn get_address() -> anyhow::Result<SocketAddr> {

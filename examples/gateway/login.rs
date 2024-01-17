@@ -15,8 +15,8 @@ mod Role {
 }
 
 pub fn handle<'a>(
-    r: &'a mut Request<Body>,
-    w: &'a mut Response<Body>,
+    _r: &'a mut Request<Body>,
+    _w: &'a mut Response<Body>,
 ) -> BoxFuture<'a, crossgate_rs::micro::IntercepterType> {
     Box::pin(async move { crossgate_rs::micro::IntercepterType::Redirect })
 }

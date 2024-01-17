@@ -29,7 +29,7 @@ impl crossgate_rs::net::Frame for JT808Frame {
         }
     }
 
-    fn write<W>(&self, w: &mut W) -> Result<(), crossgate_rs::net::FrameError>
+    fn write<W>(&self, _w: &mut W) -> Result<(), crossgate_rs::net::FrameError>
     where
         W: std::io::Write,
     {

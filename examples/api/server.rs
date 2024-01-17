@@ -2,11 +2,12 @@ use async_stream::stream;
 use axum::{
     extract::{self, Path},
     response::sse::{Event, Sse},
-    response::{IntoResponse, Response},
-    routing::{delete, get, post},
+    response::Response,
+    routing::get,
     Extension, Router,
 };
 use hyper::{Body, StatusCode};
+use tokio::net::TcpListener;
 use tokio_context::context::Context;
 
 use futures::{future::BoxFuture, stream::Stream};
@@ -40,14 +41,14 @@ where
         Ok(b) => Body::from(b),
         Err(e) => {
             return Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .status(500)
                 .body(Body::from(format!("{}", e)))
                 .unwrap()
         }
     };
 
     Response::builder()
-        .status(StatusCode::OK)
+        .status(200)
         .header("Content-Type", "application/json")
         .body(body)
         .unwrap()
@@ -62,7 +63,10 @@ where
         Err(e) => Body::from(format!("marshal error: {}", e)),
     };
 
-    Response::builder().status(status_code).body(body).unwrap()
+    Response::builder()
+        .status(status_code.as_u16())
+        .body(body)
+        .unwrap()
 }
 
 async fn hello() -> &'static str {
@@ -105,49 +109,49 @@ async fn cretae_gpsinfo(
     }
 }
 
-async fn delete_gpsinfo(
-    Path(id): Path<String>,
-    Extension(base): Extension<Base>,
-) -> impl IntoResponse {
-    match base.delete_gpsinfo(&id).await {
-        Ok(_) => respone_ok(""),
-        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
-    }
-}
+// async fn delete_gpsinfo(
+//     Path(id): Path<String>,
+//     Extension(base): Extension<Base>,
+// ) -> impl IntoResponse {
+//     match base.delete_gpsinfo(&id).await {
+//         Ok(_) => respone_ok(""),
+//         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+//     }
+// }
 
-async fn gps_count(Extension(base): Extension<Base>) -> impl IntoResponse {
-    match base.gps_count().await {
-        Ok(r) => respone_ok(r),
-        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
-    }
-}
+// async fn gps_count(Extension(base): Extension<Base>) -> impl IntoResponse {
+//     match base.gps_count().await {
+//         Ok(r) => respone_ok(r),
+//         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+//     }
+// }
 
-async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
-    match base.get_local("other").await {
-        Ok(local) => respone_ok(Message(local)),
-        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
-    }
-}
+// async fn get_local(Extension(base): Extension<Base>) -> impl IntoResponse {
+//     match base.get_local("other").await {
+//         Ok(local) => respone_ok(Message(local)),
+//         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+//     }
+// }
 
-async fn incr_local_count(Extension(base): Extension<Base>) -> impl IntoResponse {
-    match base.incr_count().await {
-        Ok(local) => respone_ok(Message(local)),
-        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
-    }
-}
-async fn batch_remove_local(Extension(base): Extension<Base>) -> impl IntoResponse {
-    match base.batch_remove_local().await {
-        Ok(local) => respone_ok(Message(local)),
-        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
-    }
-}
+// async fn incr_local_count(Extension(base): Extension<Base>) -> impl IntoResponse {
+//     match base.incr_count().await {
+//         Ok(local) => respone_ok(Message(local)),
+//         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+//     }
+// }
+// async fn batch_remove_local(Extension(base): Extension<Base>) -> impl IntoResponse {
+//     match base.batch_remove_local().await {
+//         Ok(local) => respone_ok(Message(local)),
+//         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+//     }
+// }
 
-async fn partial_update_local(Extension(base): Extension<Base>) -> impl IntoResponse {
-    match base.partial_update_local().await {
-        Ok(local) => respone_ok(Message(local)),
-        Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
-    }
-}
+// async fn partial_update_local(Extension(base): Extension<Base>) -> impl IntoResponse {
+//     match base.partial_update_local().await {
+//         Ok(local) => respone_ok(Message(local)),
+//         Err(e) => respone_failed(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+//     }
+// }
 
 async fn watch(
     Extension(base): Extension<Base>,
@@ -207,32 +211,36 @@ pub fn run<'a>(addr: &'a SocketAddr) -> BoxFuture<'a, ()> {
 
         let app = Router::new()
             // gpsinf crud
-            .route("/base/api/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
-            .route("/base/api/gps_info_count", get(gps_count))
-            .route(
-                "/base/api/gps_info/:id",
-                delete(delete_gpsinfo).get(get_gpsinfo),
-            )
+            // .route("/base/api/gps_info", get(list_gpsinfo).post(cretae_gpsinfo))
+            // .route("/base/api/gps_info_count", get(gps_count))
+            // .route(
+            //     "/base/api/gps_info/:id",
+            //     delete(delete_gpsinfo).get(get_gpsinfo),
+            // )
             // local base op
-            .route("/base/api/locals", get(list_local))
-            .route("/base/api/local", get(get_local))
-            .route("/base/api/local/op/incr", get(incr_local_count))
-            .route("/base/api/local/op/batch_remove", get(batch_remove_local))
-            .route(
-                "/base/api/local/op/partial_update",
-                get(partial_update_local),
-            )
+            // .route("/base/api/locals", get(list_local))
+            // .route("/base/api/local", get(get_local))
+            // .route("/base/api/local/op/incr", get(incr_local_count))
+            // .route("/base/api/local/op/batch_remove", get(batch_remove_local))
+            // .route(
+            //     "/base/api/local/op/partial_update",
+            //     get(partial_update_local),
+            // )
             .route("/base/api/", get(hello))
-            .route("/base/api/local_unstruncted", get(list_local_name))
+            // .route("/base/api/local_unstruncted", get(list_local_name))
             // watch steam
             .route("/base/api/watch", get(watch))
             .route("/base/api/watch2", get(watch2))
             .layer(Extension(base));
 
-        axum::Server::bind(&addr)
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
+        if let Err(e) = axum::serve(
+            TcpListener::bind(addr).await.unwrap(),
+            app.into_make_service(),
+        )
+        .await
+        {
+            panic!("start server error: {}", e)
+        }
     };
     Box::pin(block)
 }
